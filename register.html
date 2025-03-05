@@ -7,13 +7,13 @@
   <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
   <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap'>
-
+  <link rel="stylesheet" href="./style.css">
   <style>
     * {
       font-family: "Poppins";
       box-sizing: border-box;
     }
-    
+
     body {
       margin: 0;
       padding: 0;
@@ -70,7 +70,7 @@
     
     .container form h1 {
       font-size: 1.2em;
-      color: #006937;
+      color: #101827;
       margin-bottom: 0.5em;
     }
     
@@ -96,14 +96,14 @@
     }
     
     .container label input:checked + span {
-      background-color: #6db282;
+      background-color: #101827;
       color: white;
     }
     
     .login {
       width: 100%;
       padding: 0.75em;
-      background: #006937;
+      background: #101827;
       color: white;
       border: none;
       border-radius: 30px;
@@ -114,7 +114,7 @@
     .footer {
       text-align: center;
       font-size: 0.8em;
-      color: #5e5e5e;
+      color: #101827;
       margin-top: 1em;
     }
     
@@ -126,7 +126,8 @@
 </head>
 <body>
   <div class="screen-1">
-    <img class="logo" src="html/GeneralIMG/Logo.png" alt="Logo">
+    <div style="text-align: center; margin-bottom: 50px;">
+      <b>Felco Inventory Dashboard</b></div> 
     <form id="registerForm" action="/register" method="POST" onsubmit="return validateForm()">
       <div class="email">
         <label for="email">Email Address</label>
@@ -142,24 +143,11 @@
         <input id="confirmPassword" class="pas" type="password" name="confirm-password" placeholder="············" required/>
         <div id="password-error" class="error" style="display: none;">Passwords do not match.</div>
       </div>
-      <div class="container">
-        <h1>Register as:</h1>
-        <label>
-          <input type="radio" name="isTechnician" value="false" checked>
-          <span>Student</span>
-        </label>
-        <label>
-          <input type="radio" name="isTechnician" value="true">
-          <span>Technician</span>
-        </label>
-      </div>
-      <button id="registerButton" class="login" type="submit">Register</button>
+      <button class="login" id="registerbutton" onclick="window.location.href='index.html'">Register</button>
+
     </form>
     <div class="footer">
-      <a href="login">Log In</a> | <a href="#">Forgot Password?</a>
-    </div>
-    <div class="footer">
-      <a href="index" style="color: #006937;"><b>Back to Homepage</b></a>
+      <a href="index.html">Log In</a> | <a href="#">Forgot Password?</a>
     </div>
   </div>
 
