@@ -12,13 +12,15 @@ $username = "root";
 $password = "";
 $database = "itisdev";
 
+// Initialize an error message variable
+$error_message = "";
+
 $conn = new mysqli($servername, $username, $password, $database);
 if ($conn->connect_error) {
     $error_message = "Database connection failed: " . $conn->connect_error;
 }
 
-// Initialize an error message variable
-$error_message = "";
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email']) && isset($_POST['password'])) {
     $email = trim($_POST['email']);
@@ -37,9 +39,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email']) && isset($_PO
             $result = $stmt->get_result();
 
             if ($row = $result->fetch_assoc()) {
-                if ($password === $row['password']) { // Direct comparison (no hashing)
+              if (password_verify($password, $row['password'])) { // Direct comparison (no hashing)
                     $_SESSION['user'] = $email;
-                    header("Location: dashboard.html");
+                    header("Location: dashboard.php");
                     exit;
                 } else {
                     $error_message = "Incorrect password.";
@@ -75,28 +77,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email']) && isset($_PO
     }
 
     body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background-image: url('html/GeneralIMG/StandardBG.png');
-      background-size: cover;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      background-position: center;
-    }
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: url('bg.png') no-repeat center center fixed;
+        background-size: cover;
+        position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            filter: blur(10px); /* Adjust the blur intensity */
+            z-index: -1;
+        }
 
     .screen-1 {
       width: 90%;
       max-width: 400px;
       background: #f1f7fe;
-      padding: 2em 2em 7em;
-      border-radius: 30px;
-      box-shadow: 0 0 2em #e6e9f9;
-      gap: 2em;
-      position: fixed;
+      padding: 1.5em 2em;
+      border-radius: 20px;
+      box-shadow: 0 0 1.5em #e6e9f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .logo {
@@ -168,7 +181,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email']) && isset($_PO
     }
 
     .login {
-      margin-top: 50px;
       width: 100%;
       padding: 0.75em;
       background: #101827;
@@ -183,7 +195,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email']) && isset($_PO
       text-align: center;
       font-size: 0.8em;
       color: #101827;
-      margin-top: 1em;
     }
 
     .footer a {
@@ -226,33 +237,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email']) && isset($_PO
     }
   </style>
 </head>
-<>
 
     <div class="screen-1">
         <div style="text-align: center;">
-            <b>Felco Inventory Dashboard</b>
+            <img src="logo.png" alt="FELCO Logo" class="logo">
+            <br>
+            <b>Login</b>
         </div> 
         
-        <!-- Error Message Display -->
-        <?php if (!empty($error_message)) : ?>
-            <div style="color: red; background: #ffe0e0; padding: 10px; margin: 10px 0; text-align: center; border-radius: 5px;">
-                <?= $error_message; ?>
-            </div>
-        <?php endif; ?>
+        
 
         <form action="index.php" method="POST">
             <div class="email">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="username@dlsu.edu.ph" required />
+                <input type="email" id="email" name="email" required />
             </div>
             <div class="password">
                 <label for="password">Password</label>
                 <div class="password-container">
-                    <input class="pas" type="password" id="password" name="password" placeholder="············" required/>
+                    <input class="pas" type="password" id="password" name="password" required/>
                 </div>
             </div>
+            <?php if (!empty($error_message)) : ?>
+            <div style="color: red; background: #ffe0e0; padding: 10px; margin: 10px 0; text-align: center; border-radius: 5px;">
+                <?= $error_message; ?>
+            </div>
+        <?php endif; ?>
             <button type="submit" class="login">Login</button>
         </form>
+        <div class="footer">
+        <br><a href="register.php"><b>Create an account</b></a> | <a href="#">Forgot Password?</a>
+        </div>
     </div>
 
 
@@ -289,7 +304,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email']) && isset($_PO
         .then(data => {
             console.log("Parsed response:", data);
             if (data.status === "success") {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.php';
             } else {
                 errorMessage.innerText = data.message || "Invalid email or password.";
                 errorMessage.style.display = "block";

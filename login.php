@@ -1,4 +1,5 @@
 <?php
+include 'db.php';
 session_start();
 header("Content-Type: application/json");
 
@@ -19,29 +20,25 @@ if ($conn->connect_error) {
 
 // Handle POST request
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = isset($_POST['email']) ? trim($_POST['email']) : "";
-    $password = isset($_POST['password']) ? trim($_POST['password']) : "";
+    $email = $_POST['email'];
+    $password = $_POST['password'];
 
-    if (empty($email) || empty($password)) {
-        echo json_encode(["status" => "error", "message" => "Please fill in both fields."]);
-        exit;
-    }
-
-    // Check user credentials in the database
-    $stmt = $conn->prepare("SELECT password FROM account WHERE email = ?");
+    $sql = "SELECT id, password FROM accounts WHERE email = ?";
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($row = $result->fetch_assoc()) {
-        if ($password === $row['password']) { // Direct comparison, no hashing
-            $_SESSION['user'] = $email;
-            echo json_encode(["status" => "success"]);
+        if (password_verify($password, $row['password'])) {
+            $_SESSION['user_id'] = $row['id'];
+            header("Location: dashboard.php");
+            exit();
         } else {
-            echo json_encode(["status" => "error", "message" => "Incorrect password."]);
+            echo "Invalid password";
         }
     } else {
-        echo json_encode(["status" => "error", "message" => "Email not found."]);
+        echo "No user found";
     }
 
     $stmt->close();

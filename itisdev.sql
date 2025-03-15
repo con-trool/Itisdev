@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 11, 2025 at 03:47 AM
+-- Generation Time: Mar 15, 2025 at 04:47 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -11,126 +11,66 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
---
--- Database: `itisdev`
---
+-- Drop existing database if necessary
+DROP DATABASE IF EXISTS `itisdev`;
+CREATE DATABASE `itisdev`;
+USE `itisdev`;
 
 -- --------------------------------------------------------
-
---
 -- Table structure for table `account`
---
+-- --------------------------------------------------------
 
 CREATE TABLE `account` (
-  `id` int(5) NOT NULL,
-  `email` varchar(15) NOT NULL,
-  `password` varchar(15) NOT NULL
+  `id` INT(5) NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(15) NOT NULL,
+  `last_name` VARCHAR(15) NOT NULL,
+  `email` VARCHAR(50) NOT NULL UNIQUE,
+  `password` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `account`
---
-
-INSERT INTO `account` (`id`, `email`, `password`) VALUES
-(1, 'admin@gmail.com', '123');
+-- Insert sample data for `account`
+INSERT INTO `account` (`first_name`, `last_name`, `email`, `password`) VALUES
+('Josheart', 'Legarte', 'admin@gmail.com', '123');
 
 -- --------------------------------------------------------
-
---
--- Table structure for table `logs`
---
-
-CREATE TABLE `logs` (
-  `id` int(11) NOT NULL,
-  `description` varchar(50) NOT NULL,
-  `userID` int(5) NOT NULL,
-  `productID` int(5) DEFAULT NULL,
-  `datetime` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `product`
---
+-- --------------------------------------------------------
 
 CREATE TABLE `product` (
-  `id` int(5) NOT NULL,
-  `name` varchar(20) NOT NULL,
-  `category` varchar(15) NOT NULL,
-  `sales` int(11) NOT NULL,
-  `stocks` int(11) NOT NULL,
-  `price` float NOT NULL,
-  `picture` blob NOT NULL
+  `id` INT(5) NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(20) NOT NULL,
+  `category` VARCHAR(15) NOT NULL,
+  `sales` INT(11) NOT NULL DEFAULT 0,
+  `stocks` INT(11) NOT NULL DEFAULT 0,
+  `price` DECIMAL(10,2) NOT NULL,
+  `picture` BLOB NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Indexes for dumped tables
---
+-- Insert sample data for `product`
+INSERT INTO `product` (`name`, `category`, `sales`, `stocks`, `price`, `picture`) VALUES
+('Sample Product', 'Electronics', 10, 100, 99.99, '');
 
---
--- Indexes for table `account`
---
-ALTER TABLE `account`
-  ADD PRIMARY KEY (`id`,`email`),
-  ADD KEY `id` (`id`,`email`,`password`);
+-- --------------------------------------------------------
+-- Table structure for table `logs`
+-- --------------------------------------------------------
 
---
--- Indexes for table `logs`
---
-ALTER TABLE `logs`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `id` (`id`,`description`,`userID`,`datetime`),
-  ADD KEY `userID` (`userID`),
-  ADD KEY `productID` (`productID`);
+CREATE TABLE `logs` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `description` VARCHAR(50) NOT NULL,
+  `userID` INT(5) NOT NULL,
+  `productID` INT(5) DEFAULT NULL,
+  `datetime` DATETIME NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `userID` (`userID`),
+  KEY `productID` (`productID`),
+  CONSTRAINT `logs_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `account` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `logs_ibfk_2` FOREIGN KEY (`productID`) REFERENCES `product` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Indexes for table `product`
---
-ALTER TABLE `product`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `id` (`id`,`name`,`sales`,`stocks`,`price`);
+-- Insert sample data for `logs`
+INSERT INTO `logs` (`description`, `userID`, `productID`, `datetime`) VALUES
+('User logged in', 1, NULL, NOW());
 
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `account`
---
-ALTER TABLE `account`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `logs`
---
-ALTER TABLE `logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `product`
---
-ALTER TABLE `product`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `logs`
---
-ALTER TABLE `logs`
-  ADD CONSTRAINT `logs_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `account` (`id`),
-  ADD CONSTRAINT `logs_ibfk_2` FOREIGN KEY (`productID`) REFERENCES `product` (`id`);
 COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
