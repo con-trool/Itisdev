@@ -1,5 +1,12 @@
 <?php
 session_start();
+
+if (isset($_SESSION['user_id'])) {
+  echo "User ID: " . $_SESSION['user_id'];
+} else {
+  echo "User not logged in.";
+}
+
 include 'db.php';
 if (isset($_SESSION['user_id'])) {
   $user_id = $_SESSION['user_id'];

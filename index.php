@@ -304,7 +304,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['email']) && isset($_PO
         .then(data => {
             console.log("Parsed response:", data);
             if (data.status === "success") {
+                localStorage.setItem("user_id", data.user_id);
                 window.location.href = 'dashboard.php';
+               
             } else {
                 errorMessage.innerText = data.message || "Invalid email or password.";
                 errorMessage.style.display = "block";

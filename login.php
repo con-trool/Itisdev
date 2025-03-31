@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 session_start();
+
 header("Content-Type: application/json");
 
 // Enable error reporting for debugging
@@ -31,7 +32,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($row = $result->fetch_assoc()) {
         if (password_verify($password, $row['password'])) {
-            $_SESSION['user_id'] = $row['id'];
             header("Location: dashboard.php");
             exit();
         } else {

@@ -1,5 +1,13 @@
 <?php
+session_start();
+if (isset($_SESSION['user_id'])) {
+  echo "User ID: " . $_SESSION['user_id'];
+} else {
+  echo "User not logged in.";
+}
 
+
+$userId = $_SESSION['user_id']; // Now safe to use
 /************************************************
  * Database Connection & Edit/Delete Handlers
  ************************************************/
@@ -24,6 +32,48 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_product_id'])) 
   exit();
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  if (isset($_POST['stock_in_product_id'])) {
+    $productId = intval($_POST['stock_in_product_id']);
+    $stockInQty = intval($_POST['stock_in_qty']);
+    $stmt = $conn->prepare("UPDATE product SET stocks = stocks + ? WHERE id = ?");
+    $stmt->bind_param("ii", $stockInQty, $productId);
+    $stmt->execute();
+    header("Location: products.php?msg=stock_in");
+    exit();
+  }
+  
+  if (isset($_POST['stock_out_product_id'])) {
+    $productId = intval($_POST['stock_out_product_id']);
+    $stockOutQty = intval($_POST['stock_out_qty']);
+    
+    // Subtract from stock and add to sales
+    $stmt = $conn->prepare("UPDATE product SET stocks= stocks - ?, sales = sales + ? WHERE id = ?");
+    $stmt->bind_param("iii", $stockOutQty, $stockOutQty, $productId);
+    $stmt->execute();
+    header("Location: products.php?msg=stock_out");
+    exit();
+  }
+}
+
+if (isset($_POST['stock_adjust_product_id'])) {
+  $productId = intval($_POST['stock_adjust_product_id']);
+  $newStock = intval($_POST['stock_adjust_qty']);
+  $reason = $_POST['adjust_reason'];
+  $userId = $_SESSION['user_id'];
+  $timestamp = date('Y-m-d H:i:s');
+  
+  $stmt = $conn->prepare("UPDATE product SET stock = ? WHERE id = ?");
+  $stmt->bind_param("ii", $newStock, $productId);
+  $stmt->execute();
+  
+  $stmt = $conn->prepare("INSERT INTO logs (user_id, product_id, description, timestamp) VALUES (?, ?, ?, ?)");
+  $stmt->bind_param("iiss", $userId, $productId, $reason, $timestamp);
+  $stmt->execute();
+  
+  header("Location: products.php?msg=stock_adjusted");
+  exit();
+}
 // Handle editing if form is submitted (Edit Product Details feature)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_product_id'])) {
   $editId = intval($_POST['edit_product_id']);
@@ -363,6 +413,18 @@ $result = $conn->query($sql);
                                   )\">
                             Edit
                           </button>
+                          <button type='button'
+                                onclick=\"openStockInModal({$row['id']}, '{$row['name']}', {$row['stocks']})\">
+                                Stock In
+                              </button>
+                              <button type='button'
+                                onclick=\"openStockOutModal({$row['id']}, '{$row['name']}', {$row['stocks']})\">
+                                Stock Out
+                              </button>
+                              <button type='button'
+                              onclick=\"openStockAdjustModal({$row['id']}, '{$row['name']}', {$row['stocks']})\">
+                              Stock Adjustment
+                            </button>
                         </td>
                       </tr>";
               }
@@ -425,8 +487,87 @@ $result = $conn->query($sql);
       </form>
     </div>
   </div>
+<!-- Stock In Modal -->
+<div id="stockInModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="stockInClose">&times;</span>
+    <h2>Stock In</h2>
+    <form id="stockInForm" action="products.php" method="POST">
+      <input type="hidden" name="stock_in_product_id" id="stock_in_product_id">
+      <label for="stock_in_qty">Quantity</label><br>
+      <input type="number" name="stock_in_qty" id="stock_in_qty" required><br>
+      <button type="submit">Save</button>
+    </form>
+  </div>
+</div>
 
-  <script>
+<!-- Stock Out Modal -->
+<div id="stockOutModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="stockOutClose">&times;</span>
+    <h2>Stock Out</h2>
+    <form id="stockOutForm" action="products.php" method="POST">
+      <input type="hidden" name="stock_out_product_id" id="stock_out_product_id">
+      <label for="stock_out_qty">Quantity</label><br>
+      <input type="number" name="stock_out_qty" id="stock_out_qty" required><br>
+      <button type="submit">Save</button>
+    </form>
+  </div>
+</div>
+
+<!-- Stock Adjustment Modal -->
+<div id="stockAdjustModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="stockAdjustClose">&times;</span>
+    <h2>Stock Adjustment</h2>
+    <form id="stockAdjustForm" action="products.php" method="POST">
+      <input type="hidden" name="stock_adjust_product_id" id="stock_adjust_product_id">
+      <label>Current Stock</label><br>
+      <input type="number" id="current_stock" disabled><br>
+      <label for="stock_adjust_qty">New Quantity</label><br>
+      <input type="number" name="stock_adjust_qty" id="stock_adjust_qty" required><br>
+      <label for="adjust_reason">Reason</label><br>
+      <input type="text" name="adjust_reason" id="adjust_reason" required><br>
+      <button type="submit">Save</button>
+    </form>
+  </div>
+</div>
+ 
+ <script>
+document.addEventListener("DOMContentLoaded", function() {
+    let userId = localStorage.getItem("user_id");
+
+    if (!userId) {
+        console.log("Stored user_id in localStorage:", localStorage.getItem("user_id")); // Debugging
+    }
+});
+
+    // Attach user ID to all stock-related forms before submission
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", function(event) {
+            let hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = "user_id";
+            hiddenInput.value = userId;
+            form.appendChild(hiddenInput);
+        });
+    });
+
+    function openStockInModal(id, name, stocks) {
+    document.getElementById('stock_in_product_id').value = id;
+    document.getElementById('stockInModal').style.display = 'block';
+  }
+
+  function openStockOutModal(id, name, stocks) {
+    document.getElementById('stock_out_product_id').value = id;
+    document.getElementById('stockOutModal').style.display = 'block';
+  }
+
+  function openStockAdjustModal(id, name, stockQty) {
+    document.getElementById('stock_adjust_product_id').value = id;
+    document.getElementById('current_stock').value = stockQty;
+    document.getElementById('stockAdjustModal').style.display = 'block';
+  }
     // Edit feature: Open Edit Modal
     function openEditModal(id, name, status, criticalQty, price, picture) {
       document.getElementById('edit_product_id').value = id;
@@ -453,6 +594,15 @@ $result = $conn->query($sql);
       document.getElementById("productModal").style.display = "none";
     };
 
+    document.querySelector(".close").onclick = function() {
+      document.getElementById("stockInModal").style.display = "none";
+    };
+    document.querySelector(".close").onclick = function() {
+      document.getElementById("stockOutModal").style.display = "none";
+    };
+    document.querySelector(".close").onclick = function() {
+      document.getElementById("stockAdjustModal").style.display = "none";
+    };
     // Save Product function
     function saveProduct() {
       const name = document.getElementById("name").value;
