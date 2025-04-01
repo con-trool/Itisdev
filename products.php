@@ -1,13 +1,8 @@
 <?php
 session_start();
-if (isset($_SESSION['user_id'])) {
-  echo "User ID: " . $_SESSION['user_id'];
-} else {
-  echo "User not logged in.";
-}
 
 
-$userId = $_SESSION['user_id']; // Now safe to use
+
 /************************************************
  * Database Connection & Edit/Delete Handlers
  ************************************************/
@@ -55,24 +50,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     exit();
   }
 }
+$userEmail = $_SESSION['user']; 
+
+// Retrieve the user ID based on the session email
+$stmt = $conn->prepare("SELECT id FROM account WHERE email = ?");
+$stmt->bind_param("s", $userEmail);
+$stmt->execute();
+$stmt->bind_result($userId);
+$stmt->fetch();
+$stmt->close();
+
+if (!$userId) {
+    die("User ID not found.");
+}
 
 if (isset($_POST['stock_adjust_product_id'])) {
-  $productId = intval($_POST['stock_adjust_product_id']);
-  $newStock = intval($_POST['stock_adjust_qty']);
-  $reason = $_POST['adjust_reason'];
-  $userId = $_SESSION['user_id'];
-  $timestamp = date('Y-m-d H:i:s');
-  
-  $stmt = $conn->prepare("UPDATE product SET stock = ? WHERE id = ?");
-  $stmt->bind_param("ii", $newStock, $productId);
-  $stmt->execute();
-  
-  $stmt = $conn->prepare("INSERT INTO logs (user_id, product_id, description, timestamp) VALUES (?, ?, ?, ?)");
-  $stmt->bind_param("iiss", $userId, $productId, $reason, $timestamp);
-  $stmt->execute();
-  
-  header("Location: products.php?msg=stock_adjusted");
-  exit();
+    $productId = intval($_POST['stock_adjust_product_id']);
+    $newStock = intval($_POST['stock_adjust_qty']);
+    $reason = $_POST['adjust_reason'];
+    $timestamp = date('Y-m-d H:i:s');
+
+    // Update product stock
+    $stmt = $conn->prepare("UPDATE product SET stocks = ? WHERE id = ?");
+    $stmt->bind_param("ii", $newStock, $productId);
+    $stmt->execute();
+    $stmt->close();
+
+    // Log the stock adjustment
+    $stmt = $conn->prepare("INSERT INTO logs (userID, productID, description, datetime) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("iiss", $userId, $productId, $reason, $timestamp);
+    $stmt->execute();
+    $stmt->close();
+
+    header("Location: products.php?msg=stock_adjusted");
+    exit();
 }
 // Handle editing if form is submitted (Edit Product Details feature)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_product_id'])) {
@@ -267,7 +278,7 @@ $result = $conn->query($sql);
           </a>
         </li>
         <li class="sidebar-list-item">
-          <a href="logs.html">
+          <a href="logs.php">
             <!-- Logs icon -->
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"

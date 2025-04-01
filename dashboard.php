@@ -1,22 +1,17 @@
 <?php
 session_start();
 
-if (isset($_SESSION['user_id'])) {
-  echo "User ID: " . $_SESSION['user_id'];
-} else {
-  echo "User not logged in.";
-}
-
 include 'db.php';
 if (isset($_SESSION['user_id'])) {
-  $user_id = $_SESSION['user_id'];
+  $user_id = $_SESSION['user'];
 
   // Fetch user details from database
-  $query = "SELECT first_name, last_name FROM account WHERE id = ?";
-  $stmt = $conn->prepare($query);
-  $stmt->bind_param("i", $user_id);
+  $stmt = $conn->prepare("SELECT first_name, last_name FROM account WHERE email = ?");
+  $stmt->bind_param("s", $userEmail);
   $stmt->execute();
-  $result = $stmt->get_result();
+  $stmt->bind_result($userId);
+  $stmt->fetch();
+  $stmt->close();
 
   if ($row = $result->fetch_assoc()) {
     $first_name = htmlspecialchars($row['first_name']);
@@ -29,6 +24,26 @@ if (isset($_SESSION['user_id'])) {
   $first_name = "Guest";
   $last_name = "";
 }
+
+$conn = new mysqli($servername, $username, $password, $database);
+if ($conn->connect_error) {
+    die("Database connection failed: " . $conn->connect_error);
+}
+
+// Fetch logs for the table
+
+
+// Fetch product data for the graph
+$sql_products = "SELECT id, name, stocks, criticalQty FROM product";
+$result_products = $conn->query($sql_products);
+
+$products = [];
+while ($row = $result_products->fetch_assoc()) {
+    $products[] = $row;
+}
+
+$conn->close();
+
 ?>
 
 <!DOCTYPE html>
@@ -39,6 +54,7 @@ if (isset($_SESSION['user_id'])) {
   <title>Felco Inventory Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
   <link rel="stylesheet" href="./style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
 
@@ -74,7 +90,7 @@ if (isset($_SESSION['user_id'])) {
           </a>
         </li>
         <li class="sidebar-list-item">
-          <a href="logs.html">
+          <a href="logs.php">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pie-chart">
               <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
               <path d="M22 12A10 10 0 0 0 12 2v10z" />
@@ -98,19 +114,56 @@ if (isset($_SESSION['user_id'])) {
       </div>
     </div>
     <div class="app-content">
-      <div class="app-content-header">
-        <h1 class="app-content-headerText">Welcome to Felco Inventory Dashboard</h1>
-        <button class="mode-switch" title="Switch Theme">
-          <svg class="moon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" width="24" height="24" viewBox="0 0 24 24">
-            <defs></defs>
-            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
-          </svg>
-        </button>
-      </div>
+    <div class="container">
+    <h2>Product Stock Levels</h2>
+    <div class="chart-container">
+        <canvas id="stockChart"></canvas>
+    </div>
+</div>
     </div>
 
     <!-- partial -->
-    <script src="./script.js"></script>
+    <script>
+document.addEventListener("DOMContentLoaded", function() {
+    var ctx = document.getElementById('stockChart').getContext('2d');
+
+    var productNames = <?php echo json_encode(array_column($products, 'name')); ?>;
+    var productStocks = <?php echo json_encode(array_column($products, 'stocks')); ?>;
+    var criticalStocks = <?php echo json_encode(array_column($products, 'criticalQty')); ?>;
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: productNames,
+            datasets: [
+                {
+                    label: 'Critical Stock Level',
+                    data: criticalStocks,
+                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Current Stock Level',
+                    data: productStocks,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+
 
 </body>
 
