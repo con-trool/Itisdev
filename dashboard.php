@@ -31,7 +31,21 @@ if ($conn->connect_error) {
 }
 
 // Fetch logs for the table
+$userEmail = $_SESSION['user']; 
 
+// Retrieve user details based on session email
+$stmt = $conn->prepare("SELECT first_name, last_name FROM account WHERE email = ?");
+$stmt->bind_param("s", $userEmail);
+$stmt->execute();
+$stmt->bind_result($firstName, $lastName);
+$stmt->fetch();
+$stmt->close();
+
+// Extract initials
+$firstInitial = strtoupper(substr($firstName, 0, 1));
+$lastInitial = strtoupper(substr($lastName, 0, 1));
+
+$displayName = $firstName . " " . $lastInitial . ".";
 
 // Fetch product data for the graph
 $sql_products = "SELECT id, name, stocks, criticalQty FROM product";
@@ -55,7 +69,55 @@ $conn->close();
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
   <link rel="stylesheet" href="./style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .logout{  
+  align-items: center;
+  background-color: #ffc40c;
+  border: 0;
+  border-radius: 100px;
+  box-sizing: border-box;
+  color: #000;  
+  cursor: pointer;
+  display: inline-flex;
+  font-family: -apple-system, system-ui, system-ui, "Segoe UI", Roboto, "Helvetica Neue", "Fira Sans", Ubuntu, Oxygen, "Oxygen Sans", Cantarell, "Droid Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Lucida Grande", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  justify-content: center;
+  line-height: 20px;
+  max-width: 90px;
+  min-height: 30px;
+  min-width: 0px;
+  overflow: hidden;
+  padding: 0px;
+  padding-left: 20px;
+  padding-right: 20px;
+  text-align: center;
+  touch-action: manipulation;
+  transition: background-color 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s, box-shadow 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s, color 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+  user-select: none;
+  -webkit-user-select: none;
+  align-self: center;
+  margin-left: 40px;
+  margin-bottom: 10px ;
+}
 
+.logout:hover,
+.logout:focus { 
+  background-color: #16437E;
+  color: #ffffff;
+}
+
+.logout:active {
+  background: #09223b;
+  color: rgb(255, 255, 255, .7);
+}
+
+.logout:disabled { 
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, .08);
+  color: rgba(0, 0, 0, .3);
+}
+</style>
 </head>
 
 <body>
@@ -99,19 +161,16 @@ $conn->close();
           </a>
         </li>
       </ul>
-      <div class="account-info">
-
-        <div class="account-info-name">
-          <?php echo $first_name . " " . $last_name; ?>
-        </div>
-        <button class="account-info-more">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-more-horizontal">
-            <circle cx="12" cy="12" r="1" />
-            <circle cx="19" cy="12" r="1" />
-            <circle cx="5" cy="12" r="1" />
-          </svg>
-        </button>
-      </div>
+      <div class="account-info">  
+    <div class="account-info-name">
+      <b>Hello, <?php echo htmlspecialchars($displayName); ?></b>
+    </div>
+</div>
+<div style="display: flex;
+            flex-direction: row;   
+            align-items: center;">
+      <div class="logout">Logout</div>  
+    </div>
     </div>
     <div class="app-content">
     <div class="container">

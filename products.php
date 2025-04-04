@@ -17,6 +17,21 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 
+$userEmail = $_SESSION['user']; 
+
+// Retrieve user details based on session email
+$stmt = $conn->prepare("SELECT first_name, last_name FROM account WHERE email = ?");
+$stmt->bind_param("s", $userEmail);
+$stmt->execute();
+$stmt->bind_result($firstName, $lastName);
+$stmt->fetch();
+$stmt->close();
+
+// Extract initials
+$firstInitial = strtoupper(substr($firstName, 0, 1));
+$lastInitial = strtoupper(substr($lastName, 0, 1));
+
+$displayName = $firstName . " " . $lastInitial . ".";
 // Handle deletion if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_product_id'])) {
   $deleteId = intval($_POST['delete_product_id']);
@@ -157,6 +172,54 @@ $result = $conn->query($sql);
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
   <link rel="stylesheet" href="./style.css">
   <style>
+    .logout{  
+  align-items: center;
+  background-color: #ffc40c;
+  border: 0;
+  border-radius: 100px;
+  box-sizing: border-box;
+  color: #000;  
+  cursor: pointer;
+  display: inline-flex;
+  font-family: -apple-system, system-ui, system-ui, "Segoe UI", Roboto, "Helvetica Neue", "Fira Sans", Ubuntu, Oxygen, "Oxygen Sans", Cantarell, "Droid Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Lucida Grande", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  justify-content: center;
+  line-height: 20px;
+  max-width: 90px;
+  min-height: 30px;
+  min-width: 0px;
+  overflow: hidden;
+  padding: 0px;
+  padding-left: 20px;
+  padding-right: 20px;
+  text-align: center;
+  touch-action: manipulation;
+  transition: background-color 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s, box-shadow 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s, color 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+  user-select: none;
+  -webkit-user-select: none;
+  align-self: center;
+  margin-left: 40px;
+  margin-bottom: 10px ;
+}
+
+.logout:hover,
+.logout:focus { 
+  background-color: #16437E;
+  color: #ffffff;
+}
+
+.logout:active {
+  background: #09223b;
+  color: rgb(255, 255, 255, .7);
+}
+
+.logout:disabled { 
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, .08);
+  color: rgba(0, 0, 0, .3);
+}
+    
     .modal {
       display: none;
       position: fixed;
@@ -290,26 +353,23 @@ $result = $conn->query($sql);
           </a>
         </li>
       </ul>
-      <div class="account-info">
-        <div class="account-info-picture">
-          <img src="https://images.unsplash.com/photo-1527736947477-2790e28f3443?..." alt="Account">
-        </div>
-        <div class="account-info-name">Monica G.</div>
-        <button class="account-info-more">
-          <!-- 'more' icon code -->
-        </button>
-      </div>
+      <div class="account-info">  
+    <div class="account-info-name">
+      <b>Hello, <?php echo htmlspecialchars($displayName); ?></b>
+    </div>
+</div>
+<div style="display: flex;
+            flex-direction: row;   
+            align-items: center;">
+      <div class="logout">Logout</div>  
+    </div>
     </div>
 
     <div class="app-content">
       <div class="app-content-header">
         <h1 class="app-content-headerText">Products</h1>
         <button class="mode-switch" title="Switch Theme">
-          <svg class="moon" fill="none" stroke="currentColor" stroke-linecap="round"
-            stroke-linejoin="round" stroke-width="2" width="24" height="24" viewBox="0 0 24 24">
-            <defs></defs>
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
+          
         </button>
         <button id="openModal" class="app-content-headerButton">Add Product</button>
       </div>
@@ -356,28 +416,7 @@ $result = $conn->query($sql);
               </div>
             </form>
           </div>
-          <button class="action-button list active" title="List View">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" class="feather feather-list">
-              <line x1="8" y1="6" x2="21" y2="6" />
-              <line x1="8" y1="12" x2="21" y2="12" />
-              <line x1="8" y1="18" x2="21" y2="18" />
-              <line x1="3" y1="6" x2="3.01" y2="6" />
-              <line x1="3" y1="12" x2="3.01" y2="12" />
-              <line x1="3" y1="18" x2="3.01" y2="18" />
-            </svg>
-          </button>
-          <button class="action-button grid" title="Grid View">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" class="feather feather-grid">
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
-            </svg>
-          </button>
+         
         </div>
       </div>
 
