@@ -55,8 +55,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_product_id'])) 
 
   // Log deletion
   $description = "Deleted product: $deletedProductName";
+  $productId = null; // Create a variable instead of using literal null
   $stmt = $conn->prepare("INSERT INTO logs (userID, productID, description, datetime) VALUES (?, ?, ?, ?)");
-  $stmt->bind_param("iiss", $userId, $deleteId, $description, $timestamp);
+  $stmt->bind_param("iiss", $userId, $productId, $description, $timestamp);
   $stmt->execute();
   $stmt->close();
 
