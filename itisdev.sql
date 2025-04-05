@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 15, 2025 at 06:53 AM
+-- Generation Time: Apr 05, 2025 at 09:36 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -29,8 +29,8 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `account` (
   `id` int(5) NOT NULL,
-  `first_name` varchar(15) NOT NULL,
-  `last_name` varchar(15) NOT NULL,
+  `first_name` varchar(50) NOT NULL,
+  `last_name` varchar(50) NOT NULL,
   `email` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -40,8 +40,10 @@ CREATE TABLE `account` (
 --
 
 INSERT INTO `account` (`id`, `first_name`, `last_name`, `email`, `password`) VALUES
-(1, 'Josheart', 'Legarte', 'admin@gmail.com', '123'),
-(2, 'Miko', 'Serrano', 'con@gmail.com', '$2y$10$XuZ6i/zd/xynesfr5vmeAO5k3LZONzs.gm2ZnAIx53hNbPDv1fxji');
+(1, 'Josheart Adrienne', 'Legarte', 'josheart@gmail.com', '$2y$10$ectNtupgN5Y7JlZQSphdLuH83Uh1iQSPt7QMrkVcywx6HXxrwl6ie'),
+(2, 'Con Miko', 'Serrano', 'miko@gmail.com', '$2y$10$Wd/xZB0TjfTCv.qwThMY.O.8GkqDfFAwxM7uRCBWdsVOs6K28MB6G'),
+(3, 'Linc', 'Chan', 'linc@gmail.com', '$2y$10$MNdjezW3b6pkWHwaWKM0AeaQ0oVytHSDJKTboBhmtThn6h2w9To6G'),
+(6, 'Kr', 'Legarte', 'kr@gmail.com', '$2y$10$Qqn4driTcYIW93LQidlypOgaEHaTTZwogWctci40jIbk87IuWcMna');
 
 -- --------------------------------------------------------
 
@@ -62,7 +64,8 @@ CREATE TABLE `logs` (
 --
 
 INSERT INTO `logs` (`id`, `description`, `userID`, `productID`, `datetime`) VALUES
-(1, 'User logged in', 1, NULL, '2025-03-15 04:25:17');
+(2, 'ewan', 1, NULL, '2025-04-03 17:23:51'),
+(3, 'ewan', 1, NULL, '2025-04-04 14:21:58');
 
 -- --------------------------------------------------------
 
@@ -72,12 +75,12 @@ INSERT INTO `logs` (`id`, `description`, `userID`, `productID`, `datetime`) VALU
 
 CREATE TABLE `product` (
   `id` int(5) NOT NULL,
-  `name` varchar(20) NOT NULL,
+  `name` varchar(50) NOT NULL,
   `sales` int(11) NOT NULL DEFAULT 0,
   `stocks` int(11) NOT NULL DEFAULT 0,
   `criticalQty` int(5) NOT NULL DEFAULT 5,
   `price` decimal(10,2) NOT NULL,
-  `picture` varchar(200) NOT NULL,
+  `picture` blob NOT NULL,
   `status` enum('active','disabled') NOT NULL DEFAULT 'active'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -86,7 +89,11 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`id`, `name`, `sales`, `stocks`, `criticalQty`, `price`, `picture`, `status`) VALUES
-(2, 'Light Bulb', 0, 10, 3, 150.00, 'uploads/1742013468_lightbulb.jpg', 'active');
+(11, 'Compact Spiral Fluorescent Lamp', 101, 100, 10, 134.00, 0x75706c6f6164732f313734333833373730395f335332342e77656270, 'active'),
+(12, '2 Gang Switch Set - White', 0, 50, 5, 169.00, 0x75706c6f6164732f313734333833373738305f4d443531332e77656270, 'active'),
+(13, 'Home Desk Circulator Fan', 0, 10, 2, 5670.00, 0x75706c6f6164732f313734333833383138395f4648463230352e77656270, 'active'),
+(14, 'Mini Air Fryer 1.9L', 0, 5, 2, 2340.00, 0x75706c6f6164732f313734333833383235305f464846373031202831292e77656270, 'active'),
+(15, 'Smart Wifi Air Purifier', 0, 8, 2, 17000.00, 0x75706c6f6164732f313734333833383239375f465950343031202831292e77656270, 'active');
 
 --
 -- Indexes for dumped tables
@@ -97,7 +104,8 @@ INSERT INTO `product` (`id`, `name`, `sales`, `stocks`, `criticalQty`, `price`, 
 --
 ALTER TABLE `account`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `id` (`id`);
 
 --
 -- Indexes for table `logs`
@@ -121,19 +129,19 @@ ALTER TABLE `product`
 -- AUTO_INCREMENT for table `account`
 --
 ALTER TABLE `account`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `logs`
 --
 ALTER TABLE `logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `product`
 --
 ALTER TABLE `product`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- Constraints for dumped tables

@@ -274,9 +274,8 @@ $result = $conn->query($sql);
     }
 
     img {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
+      width: 300px;
+      height: 300px;
       border-radius: 5px;
     }
 
@@ -301,6 +300,61 @@ $result = $conn->query($sql);
       margin-right: auto;
       box-sizing: border-box;
     }
+    .table {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+
+    .table-header, .table-row {    
+      display: flex;
+      background-color: #f6f6f6;
+    }
+    .table-row{
+      max-height: 110px;
+    }
+    .table-header {
+      
+      background-color: #ffc40c;
+      color: black;
+      font-weight: bold;
+    }
+
+    .header__item, .table-data {
+      
+      display: flex;
+      flex: 1;
+      padding: 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+      .table-data {
+      padding: 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      background-color: white;
+      white-space: nowrap; /* Prevent line wrap */
+      overflow: auto;
+    }
+
+    .filter__link {
+      color: inherit;
+      text-decoration: none;
+      cursor: pointer;
+      
+    }
+
+    button {
+      margin: 2px;
+      padding: 4px 8px;
+      font-size: 0.9em;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -309,9 +363,7 @@ $result = $conn->query($sql);
     <div class="sidebar">
       <div class="sidebar-header">
         <div class="app-icon">
-          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-            <path fill="currentColor" d="M507.606 371.054a187.217 187.217 0 00-23.051-19.606c-17.316 19.999-37.648 36.808-60.572 50.041-35.508 20.505-75.893 31.452-116.875 31.711 21.762 8.776 45.224 13.38 69.396 13.38 49.524 0 96.084-19.286 131.103-54.305a15 15 0 004.394-10.606 15.028 15.028 0 00-4.395-10.615zM27.445 351.448a187.392 187.392 0 00-23.051 19.606C1.581 373.868 0 377.691 0 381.669s1.581 7.793 4.394 10.606c35.019 35.019 81.579 54.305 131.103 54.305 24.172 0 47.634-4.604 69.396-13.38-40.985-.259-81.367-11.206-116.879-31.713-22.922-13.231-43.254-30.04-60.569-50.039zM103.015 375.508c24.937 14.4 53.928 24.056 84.837 26.854-53.409-29.561-82.274-70.602-95.861-94.135-14.942-25.878-25.041-53.917-30.063-83.421-14.921.64-29.775 2.868-44.227 6.709-6.6 1.576-11.507 7.517-11.507 14.599 0 1.312.172 2.618.512 3.885 15.32 57.142 52.726 100.35 96.309 125.509zM324.148 402.362c30.908-2.799 59.9-12.454 84.837-26.854 43.583-25.159 80.989-68.367 96.31-125.508.34-1.267.512-2.573.512-3.885 0-7.082-4.907-13.023-11.507-14.599-14.452-3.841-29.306-6.07-44.227-6.709-5.022 29.504-15.121 57.543-30.063 83.421-13.588 23.533-42.419 64.554-95.862 94.134zM187.301 366.948c-15.157-24.483-38.696-71.48-38.696-135.903 0-32.646 6.043-64.401 17.945-94.529-16.394-9.351-33.972-16.623-52.273-21.525-8.004-2.142-16.225 2.604-18.37 10.605-16.372 61.078-4.825 121.063 22.064 167.631 16.325 28.275 39.769 54.111 69.33 73.721zM324.684 366.957c29.568-19.611 53.017-45.451 69.344-73.73 26.889-46.569 38.436-106.553 22.064-167.631-2.145-8.001-10.366-12.748-18.37-10.605-18.304 4.902-35.883 12.176-52.279 21.529 11.9 30.126 17.943 61.88 17.943 94.525.001 64.478-23.58 111.488-38.702 135.912zM266.606 69.813c-2.813-2.813-6.637-4.394-10.615-4.394a15 15 0 00-10.606 4.394c-39.289 39.289-66.78 96.005-66.78 161.231 0 65.256 27.522 121.974 66.78 161.231 2.813 2.813 6.637 4.394 10.615 4.394s7.793-1.581 10.606-4.394c39.248-39.247 66.78-95.96 66.78-161.231.001-65.256-27.511-121.964-66.78-161.231z" />
-          </svg>
+        <img src="logo.png?v=1.0" alt="App Logo" style="width: 165px; height: 80px;"/>
         </div>
       </div>
       <ul class="sidebar-list">
@@ -355,13 +407,13 @@ $result = $conn->query($sql);
       </ul>
       <div class="account-info">  
     <div class="account-info-name">
-      <b>Hello, <?php echo htmlspecialchars($displayName); ?></b>
+      <b><?php echo htmlspecialchars($displayName); ?></b>
     </div>
 </div>
 <div style="display: flex;
             flex-direction: row;   
             align-items: center;">
-      <div class="logout">Logout</div>  
+      <a href="logout.php" class="logout" style="text-decoration: none; color: inherit;">Logout</a>
     </div>
     </div>
 
@@ -421,71 +473,74 @@ $result = $conn->query($sql);
       </div>
 
       <div class="products-area-wrapper tableView">
-        <table>
-          <thead>
-            <tr>
-              <th>Image</th>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Sales</th>
-              <th>Stocks</th>
-              <th>Critical Qty</th>
-              <th>Price</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php
-            if ($result->num_rows > 0) {
-              while ($row = $result->fetch_assoc()) {
-                echo "<tr>
-                        <td><img src='{$row['picture']}' alt='Product Image'></td>
-                        <td>{$row['name']}</td>
-                        <td>{$row['status']}</td>
-                        <td>{$row['sales']}</td>
-                        <td>{$row['stocks']}</td>
-                        <td>{$row['criticalQty']}</td>
-                        <td>₱" . number_format($row['price'], 2) . "</td>
-                        <td>
-                          <form action='products.php' method='POST' style='display:inline;'
-                                onsubmit=\"return confirm('Are you sure you want to delete this product?');\">
-                            <input type='hidden' name='delete_product_id' value='{$row['id']}'>
-                            <button type='submit'>Delete</button>
-                          </form>
-                          <button type='button'
-                                  onclick=\"openEditModal(
-                                    {$row['id']},
-                                    '{$row['name']}',
-                                    '{$row['status']}',
-                                    {$row['criticalQty']},
-                                    {$row['price']},
-                                    '{$row['picture']}'
-                                  )\">
-                            Edit
-                          </button>
-                          <button type='button'
-                                onclick=\"openStockInModal({$row['id']}, '{$row['name']}', {$row['stocks']})\">
-                                Stock In
-                              </button>
-                              <button type='button'
-                                onclick=\"openStockOutModal({$row['id']}, '{$row['name']}', {$row['stocks']})\">
-                                Stock Out
-                              </button>
-                              <button type='button'
-                              onclick=\"openStockAdjustModal({$row['id']}, '{$row['name']}', {$row['stocks']})\">
-                              Stock Adjustment
-                            </button>
-                        </td>
-                      </tr>";
-              }
-            } else {
-              echo "<tr><td colspan='8'>No products found</td></tr>";
-            }
-            $conn->close();
-            ?>
-          </tbody>
-        </table>
+        <div class="table">
+        <div class="table-header">
+        <div class="header__item">
+          <a class="filter__link">Image</a>
+        </div>
+        <div class="header__item"> 
+          <a class="filter__link">Name <span class="sort-icon">&#8597;</span></a>
+        </div>
+        <div class="header__item">
+          <a class="filter__link">Status <span class="sort-icon">&#8597;</span></a>
+        </div>
+        <div class="header__item">
+          <a class="filter__link">Sales <span class="sort-icon">&#8597;</span></a>
+        </div>
+        <div class="header__item">
+          <a class="filter__link">Stocks <span class="sort-icon">&#8597;</span></a>
+        </div>
+        <div class="header__item">
+          <a class="filter__link">Critical Qty <span class="sort-icon">&#8597;</span></a>
+        </div>
+        <div class="header__item">
+          <a class="filter__link">Price <span class="sort-icon">&#8597;</span></a>
+        </div>
+        <div class="header__item" style="margin-right:230px;">
+          <a class="filter__link">Actions</a>
+        </div>
       </div>
+
+      <div class="table-content">
+  <?php
+  if ($result->num_rows > 0) {
+    // Start the table container outside of the loop
+    echo "<div class='table'>"; 
+    while ($row = $result->fetch_assoc()) {
+      echo "<div class='table-row'>
+              <div class='table-data'><img src='{$row['picture']}' alt='Product Image' style='max-width: 150px; height: auto;'></div>
+              <div class='table-data'>{$row['name']}</div>
+              <div class='table-data'>{$row['status']}</div>
+              <div class='table-data'>{$row['sales']}</div>
+              <div class='table-data'>{$row['stocks']}</div>
+              <div class='table-data'>{$row['criticalQty']}</div>
+              <div class='table-data'>₱" . number_format($row['price'], 2) . "</div>
+              <form action='products.php' method='POST' style='display: flex; margin-bottom: 80px;' onsubmit=\"return confirm('Are you sure you want to delete this product?');\">
+                <input type='hidden' name='delete_product_id' value='{$row['id']}'>
+                <button type='submit' style='background-color:white;'>Delete</button>
+              </form>
+              <button type='button' style='display: flex; margin-bottom: 80px; background-color:white;' onclick=\"openEditModal(
+                {$row['id']},
+                '{$row['name']}',
+                '{$row['status']}',
+                {$row['criticalQty']},
+                {$row['price']},
+                '{$row['picture']}'
+              )\">Edit</button>
+              <button type='button' style='display: flex; margin-bottom: 80px; background-color:white;' onclick=\"openStockInModal({$row['id']}, '{$row['name']}', {$row['stocks']})\">Stock In</button>
+              <button type='button' style='display: flex; margin-bottom: 80px; background-color:white;' onclick=\"openStockOutModal({$row['id']}, '{$row['name']}', {$row['stocks']})\">Stock Out</button>
+              <button type='button' style='display: flex; margin-bottom: 80px; background-color:white;' onclick=\"openStockAdjustModal({$row['id']}, '{$row['name']}', {$row['stocks']})\">Stock Adjustment</button>
+            </div>";
+    }
+    // Close the table container after the loop
+    echo "</div>";
+  } else {
+    // If no results, still keep the table structure
+    echo "<div class='table-row'><div class='table-data' colspan='8'>No products found</div></div>";
+  }
+  ?>
+</div>
+
     </div>
   </div>
 
@@ -494,7 +549,7 @@ $result = $conn->query($sql);
   <!-- Add Product Modal -->
   <div id="productModal" class="modal">
     <div class="modal-content">
-      <span class="close">&times;</span>
+      <span class="close" id="addClose">&times;</span>
       <h2>Add New Product</h2>
       <form id="productForm">
         <input type="text" id="name" placeholder="Product Name" required><br>
@@ -629,30 +684,39 @@ document.addEventListener("DOMContentLoaded", function() {
       document.getElementById('editModal').style.display = 'block';
     }
 
+    document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById('addClose').onclick = function () {
+      document.getElementById("productModal").style.display = "none";
+    };
+  });
     // Close Edit Modal
     document.getElementById('editClose').onclick = function() {
       document.getElementById('editModal').style.display = 'none';
     };
 
     // Open Add Product Modal
-    document.getElementById("openModal").onclick = function() {
-      document.getElementById("productModal").style.display = "block";
+    document.getElementById('openModal').onclick = function() {
+      document.getElementById('productModal').style.display = 'block';
     };
 
     // Close Add Product Modal
-    document.querySelector(".close").onclick = function() {
-      document.getElementById("productModal").style.display = "none";
-    };
+   
 
-    document.querySelector(".close").onclick = function() {
+    document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById('stockInClose').onclick = function () {
       document.getElementById("stockInModal").style.display = "none";
     };
-    document.querySelector(".close").onclick = function() {
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById('stockOutClose').onclick = function () {
       document.getElementById("stockOutModal").style.display = "none";
     };
-    document.querySelector(".close").onclick = function() {
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById('stockAdjustClose').onclick = function () {
       document.getElementById("stockAdjustModal").style.display = "none";
     };
+  });
     // Save Product function
     function saveProduct() {
       const name = document.getElementById("name").value;
@@ -673,6 +737,9 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(response => response.json())
         .then(data => {
           alert(data.message);
+          if (data.success) {
+        location.reload(); // 🔄 Reloads the page
+      }
           document.getElementById("productModal").style.display = "none";
         })
         .catch(error => console.error("Error:", error));

@@ -4,12 +4,15 @@ $username = "root";
 $password = "";
 $database = "itisdev"; 
 
+header('Content-Type: application/json'); // Let the client know this is a JSON response
+
 // Create connection
 $conn = new mysqli($servername, $username, $password, $database);
 
 // Check connection
 if ($conn->connect_error) {
-    die(json_encode(["message" => "Database Connection Failed: " . $conn->connect_error]));
+    echo json_encode(["success" => false, "message" => "Database Connection Failed: " . $conn->connect_error]);
+    exit;
 }
 
 // Handle form submission
@@ -32,7 +35,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (move_uploaded_file($_FILES["picture"]["tmp_name"], $targetFilePath)) {
             $picturePath = $targetFilePath;
         } else {
-            die(json_encode(["message" => "Failed to upload picture."]));
+            echo json_encode(["success" => false, "message" => "Failed to upload picture."]);
+            exit;
         }
     } else {
         $picturePath = null;
@@ -43,9 +47,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->bind_param("siiis", $name, $stocks, $criticalQty, $price, $picturePath);
 
     if ($stmt->execute()) {
-        echo json_encode(["message" => "Product added successfully!"]);
+        echo json_encode(["success" => true, "message" => "Product added successfully!"]);
     } else {
-        echo json_encode(["message" => "Error: " . $stmt->error]);
+        echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
     }
 
     $stmt->close();

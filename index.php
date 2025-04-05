@@ -1,6 +1,7 @@
   <!DOCTYPE html>
   <?php
   session_start();
+  include 'db.php';
 
   // Enable error reporting for debugging
   error_reporting(E_ALL);
@@ -318,6 +319,7 @@
               errorMessage.style.display = "block";
           });
       });
+      
     </script>
   </body>
   </html>
