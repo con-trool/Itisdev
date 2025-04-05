@@ -1,8 +1,6 @@
 <?php
 session_start();
 
-
-
 /************************************************
  * Database Connection & Edit/Delete Handlers
  ************************************************/
@@ -20,97 +18,125 @@ if ($conn->connect_error) {
 $userEmail = $_SESSION['user']; 
 
 // Retrieve user details based on session email
-$stmt = $conn->prepare("SELECT first_name, last_name FROM account WHERE email = ?");
+$stmt = $conn->prepare("SELECT id, first_name, last_name FROM account WHERE email = ?");
 $stmt->bind_param("s", $userEmail);
 $stmt->execute();
-$stmt->bind_result($firstName, $lastName);
-$stmt->fetch();
-$stmt->close();
-
-// Extract initials
-$firstInitial = strtoupper(substr($firstName, 0, 1));
-$lastInitial = strtoupper(substr($lastName, 0, 1));
-
-$displayName = $firstName . " " . $lastInitial . ".";
-// Handle deletion if form is submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_product_id'])) {
-  $deleteId = intval($_POST['delete_product_id']);
-  $stmt = $conn->prepare("DELETE FROM product WHERE id = ?");
-  $stmt->bind_param("i", $deleteId);
-  $stmt->execute();
-  header("Location: products.php?msg=deleted");
-  exit();
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  if (isset($_POST['stock_in_product_id'])) {
-    $productId = intval($_POST['stock_in_product_id']);
-    $stockInQty = intval($_POST['stock_in_qty']);
-    $stmt = $conn->prepare("UPDATE product SET stocks = stocks + ? WHERE id = ?");
-    $stmt->bind_param("ii", $stockInQty, $productId);
-    $stmt->execute();
-    header("Location: products.php?msg=stock_in");
-    exit();
-  }
-  
-  if (isset($_POST['stock_out_product_id'])) {
-    $productId = intval($_POST['stock_out_product_id']);
-    $stockOutQty = intval($_POST['stock_out_qty']);
-    
-    // Subtract from stock and add to sales
-    $stmt = $conn->prepare("UPDATE product SET stocks= stocks - ?, sales = sales + ? WHERE id = ?");
-    $stmt->bind_param("iii", $stockOutQty, $stockOutQty, $productId);
-    $stmt->execute();
-    header("Location: products.php?msg=stock_out");
-    exit();
-  }
-}
-$userEmail = $_SESSION['user']; 
-
-// Retrieve the user ID based on the session email
-$stmt = $conn->prepare("SELECT id FROM account WHERE email = ?");
-$stmt->bind_param("s", $userEmail);
-$stmt->execute();
-$stmt->bind_result($userId);
+$stmt->bind_result($userId, $firstName, $lastName);
 $stmt->fetch();
 $stmt->close();
 
 if (!$userId) {
-    die("User ID not found.");
+  die("User not found.");
 }
 
+$timestamp = date('Y-m-d H:i:s');
+
+// Extract initials
+$firstInitial = strtoupper(substr($firstName, 0, 1));
+$lastInitial = strtoupper(substr($lastName, 0, 1));
+$displayName = $firstName . " " . $lastInitial . ".";
+
+// Handle deletion
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_product_id'])) {
+  $deleteId = intval($_POST['delete_product_id']);
+
+  // Get product name before deletion for logging
+  $stmt = $conn->prepare("SELECT name FROM product WHERE id = ?");
+  $stmt->bind_param("i", $deleteId);
+  $stmt->execute();
+  $stmt->bind_result($deletedProductName);
+  $stmt->fetch();
+  $stmt->close();
+
+  $stmt = $conn->prepare("DELETE FROM product WHERE id = ?");
+  $stmt->bind_param("i", $deleteId);
+  $stmt->execute();
+  $stmt->close();
+
+  // Log deletion
+  $description = "Deleted product: $deletedProductName";
+  $stmt = $conn->prepare("INSERT INTO logs (userID, productID, description, datetime) VALUES (?, ?, ?, ?)");
+  $stmt->bind_param("iiss", $userId, $deleteId, $description, $timestamp);
+  $stmt->execute();
+  $stmt->close();
+
+  header("Location: products.php?msg=deleted");
+  exit();
+}
+
+// Stock In
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['stock_in_product_id'])) {
+  $productId = intval($_POST['stock_in_product_id']);
+  $stockInQty = intval($_POST['stock_in_qty']);
+
+  $stmt = $conn->prepare("UPDATE product SET stocks = stocks + ? WHERE id = ?");
+  $stmt->bind_param("ii", $stockInQty, $productId);
+  $stmt->execute();
+  $stmt->close();
+
+  // Log stock in
+  $description = "Stocked in $stockInQty units.";
+  $stmt = $conn->prepare("INSERT INTO logs (userID, productID, description, datetime) VALUES (?, ?, ?, ?)");
+  $stmt->bind_param("iiss", $userId, $productId, $description, $timestamp);
+  $stmt->execute();
+  $stmt->close();
+
+  header("Location: products.php?msg=stock_in");
+  exit();
+}
+
+// Stock Out
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['stock_out_product_id'])) {
+  $productId = intval($_POST['stock_out_product_id']);
+  $stockOutQty = intval($_POST['stock_out_qty']);
+
+  $stmt = $conn->prepare("UPDATE product SET stocks = stocks - ?, sales = sales + ? WHERE id = ?");
+  $stmt->bind_param("iii", $stockOutQty, $stockOutQty, $productId);
+  $stmt->execute();
+  $stmt->close();
+
+  // Log stock out
+  $description = "Stocked out $stockOutQty units.";
+  $stmt = $conn->prepare("INSERT INTO logs (userID, productID, description, datetime) VALUES (?, ?, ?, ?)");
+  $stmt->bind_param("iiss", $userId, $productId, $description, $timestamp);
+  $stmt->execute();
+  $stmt->close();
+
+  header("Location: products.php?msg=stock_out");
+  exit();
+}
+
+// Stock Adjustment
 if (isset($_POST['stock_adjust_product_id'])) {
-    $productId = intval($_POST['stock_adjust_product_id']);
-    $newStock = intval($_POST['stock_adjust_qty']);
-    $reason = $_POST['adjust_reason'];
-    $timestamp = date('Y-m-d H:i:s');
+  $productId = intval($_POST['stock_adjust_product_id']);
+  $newStock = intval($_POST['stock_adjust_qty']);
+  $reason = $_POST['adjust_reason'];
 
-    // Update product stock
-    $stmt = $conn->prepare("UPDATE product SET stocks = ? WHERE id = ?");
-    $stmt->bind_param("ii", $newStock, $productId);
-    $stmt->execute();
-    $stmt->close();
+  $stmt = $conn->prepare("UPDATE product SET stocks = ? WHERE id = ?");
+  $stmt->bind_param("ii", $newStock, $productId);
+  $stmt->execute();
+  $stmt->close();
 
-    // Log the stock adjustment
-    $stmt = $conn->prepare("INSERT INTO logs (userID, productID, description, datetime) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("iiss", $userId, $productId, $reason, $timestamp);
-    $stmt->execute();
-    $stmt->close();
+  // Log adjustment
+  $stmt = $conn->prepare("INSERT INTO logs (userID, productID, description, datetime) VALUES (?, ?, ?, ?)");
+  $stmt->bind_param("iiss", $userId, $productId, $reason, $timestamp);
+  $stmt->execute();
+  $stmt->close();
 
-    header("Location: products.php?msg=stock_adjusted");
-    exit();
+  header("Location: products.php?msg=stock_adjusted");
+  exit();
 }
-// Handle editing if form is submitted (Edit Product Details feature)
+
+// Edit Product
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_product_id'])) {
   $editId = intval($_POST['edit_product_id']);
   $editName = $_POST['edit_name'];
   $editStatus = $_POST['edit_status'];
   $editCriticalQty = intval($_POST['edit_criticalQty']);
   $editPrice = floatval($_POST['edit_price']);
-
-  // Retain old picture unless a new one is uploaded
   $oldPicture = $_POST['old_picture'];
   $newPicturePath = $oldPicture;
+
   if (isset($_FILES['edit_picture']) && $_FILES['edit_picture']['error'] === 0) {
     $targetDir = "uploads/";
     if (!is_dir($targetDir)) {
@@ -126,6 +152,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_product_id'])) {
   $stmt = $conn->prepare("UPDATE product SET name = ?, status = ?, criticalQty = ?, price = ?, picture = ? WHERE id = ?");
   $stmt->bind_param("ssidsi", $editName, $editStatus, $editCriticalQty, $editPrice, $newPicturePath, $editId);
   $stmt->execute();
+  $stmt->close();
+
+  // Log product edit
+  $description = "Edited product details: $editName";
+  $stmt = $conn->prepare("INSERT INTO logs (userID, productID, description, datetime) VALUES (?, ?, ?, ?)");
+  $stmt->bind_param("iiss", $userId, $editId, $description, $timestamp);
+  $stmt->execute();
+  $stmt->close();
+
   header("Location: products.php?msg=edited");
   exit();
 }
@@ -135,7 +170,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_product_id'])) {
  ************************************************/
 $whereClauses = [];
 
-// Search filter (case-insensitive, partial match)
+// Search filter
 if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
   $searchTerm = $conn->real_escape_string($_GET['search']);
   $whereClauses[] = "LOWER(name) LIKE LOWER('%$searchTerm%')";
@@ -162,6 +197,7 @@ if (count($whereClauses) > 0) {
 }
 $result = $conn->query($sql);
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -476,28 +512,28 @@ $result = $conn->query($sql);
         <div class="table">
         <div class="table-header">
         <div class="header__item">
-          <a class="filter__link">Image</a>
-        </div>
-        <div class="header__item"> 
-          <a class="filter__link">Name <span class="sort-icon">&#8597;</span></a>
-        </div>
-        <div class="header__item">
-          <a class="filter__link">Status <span class="sort-icon">&#8597;</span></a>
-        </div>
-        <div class="header__item">
-          <a class="filter__link">Sales <span class="sort-icon">&#8597;</span></a>
-        </div>
-        <div class="header__item">
-          <a class="filter__link">Stocks <span class="sort-icon">&#8597;</span></a>
-        </div>
-        <div class="header__item">
-          <a class="filter__link">Critical Qty <span class="sort-icon">&#8597;</span></a>
-        </div>
-        <div class="header__item">
-          <a class="filter__link">Price <span class="sort-icon">&#8597;</span></a>
-        </div>
-        <div class="header__item" style="margin-right:230px;">
-          <a class="filter__link">Actions</a>
+        <a class="filter__link">Image</a>
+      </div>
+      <div class="header__item"> 
+        <a class="filter__link" data-column="name">Name <span class="sort-icon">&#8597;</span></a>
+      </div>
+      <div class="header__item">
+        <a class="filter__link" data-column="status">Status <span class="sort-icon">&#8597;</span></a>
+      </div>
+      <div class="header__item">
+        <a class="filter__link" data-column="sales">Sales <span class="sort-icon">&#8597;</span></a>
+      </div>
+      <div class="header__item">
+        <a class="filter__link" data-column="stocks">Stocks <span class="sort-icon">&#8597;</span></a>
+      </div>
+      <div class="header__item">
+        <a class="filter__link">Critical Qty</a>
+      </div>
+      <div class="header__item">
+        <a class="filter__link" data-column="price">Price <span class="sort-icon">&#8597;</span></a>
+      </div>
+      <div class="header__item" style="margin-right:230px;">
+        <a class="filter__link">Actions</a>
         </div>
       </div>
 
@@ -599,12 +635,22 @@ $result = $conn->query($sql);
     <h2>Stock In</h2>
     <form id="stockInForm" action="products.php" method="POST">
       <input type="hidden" name="stock_in_product_id" id="stock_in_product_id">
+
+      <label>Current Stock</label><br>
+      <input type="number" id="stock_in_current_stock" disabled><br>
+
       <label for="stock_in_qty">Quantity</label><br>
       <input type="number" name="stock_in_qty" id="stock_in_qty" required><br>
-      <button type="submit">Save</button>
+
+      <div id="stock-in-error-message" style="color: red; display: none;">
+        Quantity cannot be zero or negative.
+      </div>
+
+      <button type="submit" id="stock_in_submit_button" disabled>Save</button>
     </form>
   </div>
 </div>
+
 
 <!-- Stock Out Modal -->
 <div id="stockOutModal" class="modal">
@@ -613,9 +659,12 @@ $result = $conn->query($sql);
     <h2>Stock Out</h2>
     <form id="stockOutForm" action="products.php" method="POST">
       <input type="hidden" name="stock_out_product_id" id="stock_out_product_id">
+      <label>Current Stock</label><br>
+      <input type="number" id="current_stock" disabled><br> <!-- Display current stock -->
       <label for="stock_out_qty">Quantity</label><br>
       <input type="number" name="stock_out_qty" id="stock_out_qty" required><br>
-      <button type="submit">Save</button>
+      <div id="error-message" style="color: red; display: none;">Quantity cannot be zero, negative, or greater than current stock number.</div> <!-- Error message -->
+      <button type="submit" id="submitButton" disabled>Save</button> <!-- Initially disabled -->
     </form>
   </div>
 </div>
@@ -628,12 +677,13 @@ $result = $conn->query($sql);
     <form id="stockAdjustForm" action="products.php" method="POST">
       <input type="hidden" name="stock_adjust_product_id" id="stock_adjust_product_id">
       <label>Current Stock</label><br>
-      <input type="number" id="current_stock" disabled><br>
+      <input type="number" id="adjust_current_stock" disabled>
       <label for="stock_adjust_qty">New Quantity</label><br>
       <input type="number" name="stock_adjust_qty" id="stock_adjust_qty" required><br>
+      <div id="adjust-error-message" style="color: red; display: none;">Quantity cannot be negative.</div> <!-- Error message -->
       <label for="adjust_reason">Reason</label><br>
       <input type="text" name="adjust_reason" id="adjust_reason" required><br>
-      <button type="submit">Save</button>
+      <button type="submit" id="adjustsubmitButton" disabled>Save</button>
     </form>
   </div>
 </div>
@@ -658,19 +708,79 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    function openStockInModal(id, name, stocks) {
+// Listen for input on the stock in quantity field
+document.getElementById('stock_in_qty').addEventListener('input', function () {
+    var quantity = parseInt(this.value);
+    var submitButton = document.getElementById('stock_in_submit_button');
+    var errorMessage = document.getElementById('stock-in-error-message');
+
+    if (quantity <= 0 || isNaN(quantity)) {
+        errorMessage.style.display = 'block';
+        submitButton.disabled = true;
+    } else {
+        errorMessage.style.display = 'none';
+        submitButton.disabled = false;
+    }
+});
+
+// Function to open the Stock In modal and populate values
+function openStockInModal(id, name, stocks) {
     document.getElementById('stock_in_product_id').value = id;
+    document.getElementById('stock_in_current_stock').value = stocks;
+    document.getElementById('stock_in_qty').value = '';
+    document.getElementById('stock-in-error-message').style.display = 'none';
+    document.getElementById('stock_in_submit_button').disabled = true;
     document.getElementById('stockInModal').style.display = 'block';
-  }
+}
 
-  function openStockOutModal(id, name, stocks) {
+
+  document.getElementById('stock_out_qty').addEventListener('input', function() {
+    var quantity = parseInt(this.value);
+    var submitButton = document.getElementById('submitButton');
+    var errorMessage = document.getElementById('error-message');
+    var currentStock = parseInt(document.getElementById('current_stock').value);
+
+    // If quantity is negative or greater than current stock, show error message and disable submit button
+    if (quantity < 1 || quantity > currentStock) {
+        errorMessage.style.display = 'block'; // Show error message
+        submitButton.disabled = true; // Disable submit button
+    } else {
+        errorMessage.style.display = 'none'; // Hide error message
+        submitButton.disabled = false; // Enable submit button
+    }
+});
+
+function openStockOutModal(id, name, stocks) {
+    // Set the hidden product ID
     document.getElementById('stock_out_product_id').value = id;
-    document.getElementById('stockOutModal').style.display = 'block';
-  }
 
+    // Set the current stock in the modal
+    document.getElementById('current_stock').value = stocks;
+
+    // Open the modal
+    document.getElementById('stockOutModal').style.display = 'block';
+}
+
+
+  document.getElementById('stock_adjust_qty').addEventListener('input', function() {
+    var newStockQty = this.value;
+    var submitButton = document.getElementById('adjustsubmitButton');
+    var errorMessage = document.getElementById('adjust-error-message');
+
+    // Check if the value is negative
+    if (newStockQty < 0) {
+      submitButton.disabled = true;
+      errorMessage.style.display = 'block'; // Show error message
+    } else {
+      submitButton.disabled = false;
+      errorMessage.style.display = 'none'; // Hide error message
+    }
+  });
+  
+  // Function to open the modal and set the initial values
   function openStockAdjustModal(id, name, stockQty) {
     document.getElementById('stock_adjust_product_id').value = id;
-    document.getElementById('current_stock').value = stockQty;
+    document.getElementById('adjust_current_stock').value = stockQty;
     document.getElementById('stockAdjustModal').style.display = 'block';
   }
     // Edit feature: Open Edit Modal
@@ -744,7 +854,62 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .catch(error => console.error("Error:", error));
     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+  const headers = document.querySelectorAll(".table-header .header__item");
+  const tableContent = document.querySelector(".table-content");
+  const originalRows = Array.from(document.querySelectorAll(".table-row")); // Store the initial order of rows
+
+  headers.forEach((header, index) => {
+    let sortState = 0; // 0: normal, 1: ascending, 2: descending
+
+    header.addEventListener("click", function () {
+      const rows = Array.from(document.querySelectorAll(".table-row"));
+
+      // Toggle the sorting state
+      sortState = (sortState + 1) % 3; // 0 -> 1 -> 2 -> 0 (normal -> ascending -> descending -> normal)
+
+      if (sortState === 0) {
+        // Reset to the original order
+        rows.forEach((row, i) => {
+          tableContent.appendChild(originalRows[i]); // Re-append the rows in their original order
+        });
+      } else {
+        // Sorting based on the column index
+        rows.sort((a, b) => {
+          const cellA = a.children[index].textContent.trim();
+          const cellB = b.children[index].textContent.trim();
+
+          // Sorting for "Name" column (Alphabetical Order)
+          if (index === 1) {
+            if (cellA < cellB) return sortState === 1 ? -1 : 1;
+            if (cellA > cellB) return sortState === 1 ? 1 : -1;
+            return 0;
+          }
+
+          // Sorting for "Price" column (Numeric sorting)
+          if (index === 6 || index === 4 || index === 3) {
+            // Remove any non-numeric characters (such as $ or ,) before converting to float
+            const aVal = parseFloat(cellA.replace(/[^\d.-]/g, ''));
+            const bVal = parseFloat(cellB.replace(/[^\d.-]/g, ''));
+            
+            return sortState === 1 ? aVal - bVal : bVal - aVal;
+          }
+
+          // Default lexicographical sorting for other columns (like Status, Sales, etc.)
+          if (cellA < cellB) return sortState === 1 ? -1 : 1;
+          if (cellA > cellB) return sortState === 1 ? 1 : -1;
+          return 0;
+        });
+
+        rows.forEach(row => tableContent.appendChild(row)); // Append sorted rows
+      }
+    });
+  });
+});
+
   </script>
+
 </body>
 
 </html>

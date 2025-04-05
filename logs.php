@@ -14,7 +14,19 @@ if ($conn->connect_error) {
     die("Database connection failed: " . $conn->connect_error);
 }
 
-$sql = "SELECT id, datetime, userID, productID, description FROM logs ORDER BY datetime DESC";
+$sql = "
+    SELECT 
+        logs.datetime, 
+        account.first_name, 
+        account.last_name, 
+        product.name AS product_name, 
+        logs.description 
+    FROM logs
+    LEFT JOIN account ON logs.userID = account.id
+    LEFT JOIN product ON logs.productID = product.id
+    ORDER BY logs.datetime DESC
+";
+
 $result = $conn->query($sql);
 
 $userEmail = $_SESSION['user']; 
@@ -204,28 +216,28 @@ $displayName = $firstName . " " . $lastInitial . ".";
     <div class="products-area-wrapper tableView">
     <div class="table">
     <div class="table-header">
-      <div class="header__item"><a class="filter__link">Date <span class="sort-icon">&#8597;</span></a></div>
-      <div class="header__item"><a class="filter__link">Time <span class="sort-icon">&#8597;</span></a></div>
-      <div class="header__item"><a class="filter__link">User ID </a></div>
-      <div class="header__item"><a class="filter__link">Product ID </a></div>
-      <div class="header__item"><a class="filter__link">Description </a></div>
+      <div class="header__item" data-column="0"><a class="filter__link">Date <span class="sort-icon">&#8597;</span></a></div>
+      <div class="header__item" data-column="1"><a class="filter__link">Time</a></div>
+      <div class="header__item" data-column="2"><a class="filter__link">User</a></div>
+      <div class="header__item" data-column="3"><a class="filter__link">Product</a></div>
+      <div class="header__item" data-column="4"><a class="filter__link">Description</a></div>
     </div>
 
     <div class="table-content">
       <?php
       if ($result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
-              $timestamp = new DateTime($row['datetime'], new DateTimeZone('UTC'));
-              $timestamp->setTimezone(new DateTimeZone('Asia/Manila'));
+            $timestamp = new DateTime($row['datetime']);
+            $timestamp->modify('6 hours');
 
-              $date = $timestamp->format("Y-m-d");
-              $time = $timestamp->format("H:i:s");
+            $date = $timestamp->format("Y-m-d");
+            $time = $timestamp->format("H:i:s");
 
               echo "<div class='table-row'>
                       <div class='table-data'>{$date}</div>
                       <div class='table-data'>{$time}</div>
-                      <div class='table-data'>{$row['userID']}</div>
-                      <div class='table-data'>{$row['productID']}</div>
+                      <div class='table-data'>{$row['first_name']} {$row['last_name']}</div>
+                      <div class='table-data'>{$row['product_name']}</div>
                       <div class='table-data'>{$row['description']}</div>
                     </div>";
           }
@@ -238,31 +250,59 @@ $displayName = $firstName . " " . $lastInitial . ".";
 </div>
 
 <!-- partial -->
-  <script  src="./script.js">
+  <script src="./script.js"></script>
+  <script>
     document.addEventListener("DOMContentLoaded", function () {
-    const modeSwitch = document.querySelector(".mode-switch");
-    const body = document.body;
+      const modeSwitch = document.querySelector(".mode-switch");
+      const body = document.body;
 
-    // Check localStorage for saved theme preference
-    const currentTheme = localStorage.getItem("theme");
+      const currentTheme = localStorage.getItem("theme");
 
-    if (currentTheme === "dark") {
-        body.classList.add("dark-mode");
-    } else {
-        body.classList.remove("dark-mode");
-    }
+      if (currentTheme === "dark") {
+          body.classList.add("dark-mode");
+      } else {
+          body.classList.remove("dark-mode");
+      }
 
-    modeSwitch.addEventListener("click", function () {
-        body.classList.toggle("dark-mode");
+      if (modeSwitch) {
+        modeSwitch.addEventListener("click", function () {
+            body.classList.toggle("dark-mode");
+            localStorage.setItem("theme", body.classList.contains("dark-mode") ? "dark" : "light");
+        });
+      }
 
-        if (body.classList.contains("dark-mode")) {
-            localStorage.setItem("theme", "dark");
-        } else {
-            localStorage.setItem("theme", "light");
-        }
+      // Sorting functionality
+      const headers = document.querySelectorAll(".table-header .header__item");
+      const tableContent = document.querySelector(".table-content");
+
+      headers.forEach((header, index) => {
+  let ascending = true;
+
+  header.addEventListener("click", function () {
+    // Skip sorting for the Time column (index 1)
+    if (index === 1) return;
+
+    const rows = Array.from(document.querySelectorAll(".table-row"));
+
+    rows.sort((a, b) => {
+      const cellA = a.children[index].textContent.trim();
+      const cellB = b.children[index].textContent.trim();
+
+      const aVal = isNaN(Date.parse(cellA)) ? cellA.toLowerCase() : new Date(cellA);
+      const bVal = isNaN(Date.parse(cellB)) ? cellB.toLowerCase() : new Date(cellB);
+
+      if (aVal < bVal) return ascending ? -1 : 1;
+      if (aVal > bVal) return ascending ? 1 : -1;
+      return 0;
     });
-});
-  </script>
 
+    ascending = !ascending;
+    tableContent.innerHTML = "";
+    rows.forEach(row => tableContent.appendChild(row));
+  });
+});
+
+    });
+  </script>
 </body>
 </html>
