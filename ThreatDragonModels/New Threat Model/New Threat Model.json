@@ -1,26 +1,117 @@
 {
   "version": "2.4.1",
   "summary": {
-    "title": "New Threat Model",
-    "owner": "",
+    "title": "Feedback Auth System",
+    "owner": "Josheart Adrienne Legarte",
     "description": "",
     "id": 0
   },
   "detail": {
-    "contributors": [],
-    "diagrams": [
+    "boundaries": [
       {
-        "id": 0,
-        "title": "New STRIDE diagram",
-        "diagramType": "STRIDE",
-        "placeholder": "New STRIDE diagram description",
-        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
-        "version": "2.4.1",
-        "cells": []
+        "id": "tb1",
+        "name": "Browser Trust Boundary",
+        "type": "TrustBoundary"
+      },
+      {
+        "id": "tb2",
+        "name": "Auth Trust Boundary",
+        "type": "TrustBoundary"
+      },
+      {
+        "id": "tb3",
+        "name": "Database Trust Boundary",
+        "type": "TrustBoundary"
+      },
+      {
+        "id": "tb4",
+        "name": "LDAP Trust Boundary",
+        "type": "TrustBoundary"
       }
     ],
-    "diagramTop": 1,
-    "reviewer": "",
-    "threatTop": 0
+    "entities": [
+      {
+        "id": "actor1",
+        "name": "Browser Client",
+        "type": "Actor",
+        "boundaryId": "tb1"
+      },
+      {
+        "id": "proc1",
+        "name": "Web Application",
+        "type": "Process",
+        "boundaryId": "tb1"
+      },
+      {
+        "id": "proc2",
+        "name": "Authorization Provider",
+        "type": "Process",
+        "boundaryId": "tb2"
+      },
+      {
+        "id": "store1",
+        "name": "SQL Database",
+        "type": "Store",
+        "boundaryId": "tb3"
+      },
+      {
+        "id": "store2",
+        "name": "LDAP Directory",
+        "type": "Store",
+        "boundaryId": "tb4"
+      }
+    ],
+    "flows": [
+      {
+        "source": "actor1",
+        "target": "proc1",
+        "name": "User Sends Credentials"
+      },
+      {
+        "source": "proc1",
+        "target": "proc2",
+        "name": "Auth Verification"
+      },
+      {
+        "source": "proc2",
+        "target": "store2",
+        "name": "Verifies Privilege"
+      },
+      {
+        "source": "store2",
+        "target": "proc2",
+        "name": "Verified"
+      },
+      {
+        "source": "proc2",
+        "target": "proc1",
+        "name": "Verified"
+      },
+      {
+        "source": "proc1",
+        "target": "actor1",
+        "name": "User is Authenticated"
+      },
+      {
+        "source": "actor1",
+        "target": "proc1",
+        "name": "Insert Feedback Comments"
+      },
+      {
+        "source": "proc1",
+        "target": "store1",
+        "name": "Insert Query With Feedback"
+      },
+      {
+        "source": "store1",
+        "target": "proc1",
+        "name": "Success = 1"
+      },
+      {
+        "source": "proc1",
+        "target": "actor1",
+        "name": "Feedback Comments Saved"
+      }
+    ]
   }
 }
